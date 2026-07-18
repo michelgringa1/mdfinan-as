@@ -2539,6 +2539,7 @@ function Ajustes({ cfg, salvarCfg, txns, salvarTxns, aviso, mov, salvarMov }) {
   const [fixa, setFixa] = useState({ nome: "", valor: "", dia: "", tipo: "PF", cat: "Contas da casa" });
   const [buscaRegra, setBuscaRegra] = useState("");
   const [backup, setBackup] = useState(null);
+  const [restore, setRestore] = useState(null);
   const [loteRegras, setLoteRegras] = useState("");
   const [novaRegra, setNovaRegra] = useState({ m: "", t: "PF", c: "", apelido: "", conta: "" });
 
@@ -2869,6 +2870,7 @@ function Ajustes({ cfg, salvarCfg, txns, salvarTxns, aviso, mov, salvarMov }) {
           <button className="btn ghost sm" onClick={() => {
             setBackup(JSON.stringify({ txns, cfg, mov }, null, 2));
           }}>Exportar tudo (JSON)</button>
+          <button className="btn ghost sm" onClick={() => setRestore("")}>Restaurar backup</button>
           <button className="btn ghost sm" style={{ color: "var(--alerta)" }} onClick={() => {
             if (confirm("Apagar todos os lançamentos? Isso não volta.")) {
               salvarTxns([]); aviso("Lançamentos apagados.");
@@ -2892,6 +2894,35 @@ function Ajustes({ cfg, salvarCfg, txns, salvarTxns, aviso, mov, salvarMov }) {
                 try { navigator.clipboard.writeText(backup); aviso("Copiado!"); }
                 catch { aviso("Selecione o texto e copie manualmente."); }
               }}><Check size={14} /> Copiar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {restore !== null && (
+        <div className="modal-bg" onClick={() => setRestore(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <h3>Restaurar backup</h3>
+            <p style={{ color: "var(--mut)", fontSize: 12.5, margin: "0 0 10px" }}>
+              Cole o JSON do backup (o que você exportou). Ele substitui os dados atuais e grava tudo no banco.
+            </p>
+            <textarea value={restore} onChange={(e) => setRestore(e.target.value)} rows={7}
+              placeholder='{"txns":[...],"cfg":{...},"mov":[...]}'
+              style={{ width: "100%", background: "var(--surface2)", border: "1px solid var(--line)", color: "var(--txt)", borderRadius: 8, padding: 10, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", resize: "vertical", outline: "none" }} />
+            <div className="acoes">
+              <button className="btn ghost sm" onClick={() => setRestore(null)}>Cancelar</button>
+              <button className="btn sm" onClick={async () => {
+                let d;
+                try { d = JSON.parse(restore); } catch { aviso("JSON inválido."); return; }
+                if (!d || typeof d !== "object") { aviso("Backup inválido."); return; }
+                try {
+                  if (d.cfg) await salvarCfg(d.cfg);
+                  if (Array.isArray(d.txns)) await salvarTxns(d.txns);
+                  if (Array.isArray(d.mov)) await salvarMov(d.mov);
+                  setRestore(null);
+                  aviso(`Restaurado: ${(d.txns || []).length} lançamentos, ${(d.mov || []).length} movimentos.`);
+                } catch { aviso("Erro ao gravar. Tente de novo."); }
+              }}><Check size={14} /> Restaurar</button>
             </div>
           </div>
         </div>

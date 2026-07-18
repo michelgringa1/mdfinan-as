@@ -27,7 +27,7 @@ function Root() {
     setErro(''); setCarregando(true)
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
     setCarregando(false)
-    if (error) setErro('Email ou senha incorretos.')
+    if (error) setErro(error.message || 'Falha ao entrar.')
   }
 
   if (!pronto) return <div style={wrap}><span style={{ color: '#8a93b2' }}>Carregando…</span></div>

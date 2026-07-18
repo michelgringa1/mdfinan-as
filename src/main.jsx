@@ -25,9 +25,15 @@ function Root() {
   const entrar = async (e) => {
     e.preventDefault()
     setErro(''); setCarregando(true)
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
-    setCarregando(false)
-    if (error) setErro(error.message || 'Falha ao entrar.')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
+      setCarregando(false)
+      if (error) { console.error('login error', error); setErro(`${error.name||'Erro'}: ${error.message||'sem mensagem'} [${error.status||'?'}]`) }
+    } catch (ex) {
+      setCarregando(false)
+      console.error('login exception', ex)
+      setErro('Exceção: ' + (ex && ex.message ? ex.message : String(ex)))
+    }
   }
 
   if (!pronto) return <div style={wrap}><span style={{ color: '#8a93b2' }}>Carregando…</span></div>
